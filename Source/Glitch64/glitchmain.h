@@ -17,7 +17,7 @@ extern int dumping;
 
 typedef struct _wrapper_config
 {
-#ifdef _WIN32
+#ifndef ANDROID
     int res;
 #endif
     int fbo;
@@ -46,10 +46,21 @@ extern int buffer_cleared; // mark that the buffer has been cleared, used to che
 
 #ifdef _WIN32
 #include <windows.h>
+typedef const char * (WINAPI * PFNWGLGETEXTENSIONSSTRINGARBPROC)(HDC hdc);
+#else
+#include <stdio.h>
+#endif
+
+#if defined(__ANDROID__) || defined(ANDROID)
+#include "OGLESwrappers.h"
+#else
 #include "opengl.h"
 
 extern "C" {
+#ifndef GL_VERSION_1_3
     extern PFNGLACTIVETEXTUREARBPROC glActiveTextureARB;
+    extern PFNGLMULTITEXCOORD2FARBPROC glMultiTexCoord2fARB;
+#endif
     extern PFNGLATTACHOBJECTARBPROC glAttachObjectARB;
     extern PFNGLBINDFRAMEBUFFEREXTPROC glBindFramebufferEXT;
     extern PFNGLBINDRENDERBUFFEREXTPROC glBindRenderbufferEXT;
@@ -69,7 +80,6 @@ extern "C" {
     extern PFNGLGETOBJECTPARAMETERIVARBPROC glGetObjectParameterivARB;
     extern PFNGLGETUNIFORMLOCATIONARBPROC glGetUniformLocationARB;
     extern PFNGLLINKPROGRAMARBPROC glLinkProgramARB;
-    extern PFNGLMULTITEXCOORD2FARBPROC glMultiTexCoord2fARB;
     extern PFNGLRENDERBUFFERSTORAGEEXTPROC glRenderbufferStorageEXT;
     extern PFNGLSECONDARYCOLOR3FPROC glSecondaryColor3f;
     extern PFNGLSHADERSOURCEARBPROC glShaderSourceARB;
@@ -78,12 +88,9 @@ extern "C" {
     extern PFNGLUNIFORM4FARBPROC glUniform4fARB;
     extern PFNGLUSEPROGRAMOBJECTARBPROC glUseProgramObjectARB;
     extern PFNGLGETHANDLEARBPROC glGetHandleARB;
-    typedef const char * (WINAPI * PFNWGLGETEXTENSIONSSTRINGARBPROC) (HDC hdc);
 }
-#else
-#include <stdio.h>
-#include "OGLESwrappers.h"
-#endif // _WIN32
+#endif
+
 #include "glide.h"
 
 void init_geometry();
@@ -171,11 +178,14 @@ void disable_textureSizes();
 
 // config functions
 
-#ifdef _WIN32
-FX_ENTRY void FX_CALL grConfigWrapperExt(FxI32, FxI32, FxBool, FxBool);
-#else
-FX_ENTRY void FX_CALL grConfigWrapperExt(FxI32, FxBool, FxBool);
+FX_ENTRY void FX_CALL grConfigWrapperExt(
+#ifndef ANDROID
+    FxI32, /* resolution parameter not supported on Android build */
 #endif
+    FxI32,
+    FxBool,
+    FxBool
+);
 FX_ENTRY GrScreenResolution_t FX_CALL grWrapperFullScreenResolutionExt(FxU32*, FxU32*);
 FX_ENTRY char ** FX_CALL grQueryResolutionsExt(int32_t*);
 FX_ENTRY FxBool FX_CALL grKeyPressedExt(FxU32 key);
